@@ -1,8 +1,8 @@
 from langchain_core.tools import tool
 from langchain_google_genai import ChatGoogleGenerativeAI
 import os
-
-llm = ChatGoogleGenerativeAI(api_key=os.getenv("GEMINI_API_KEY"), model="gemini-pro")
+import ast
+llm = ChatGoogleGenerativeAI(api_key=os.getenv("GEMINI_API_KEY"), model="gemini-2.0-flash")
 
 @tool
 def classify_email(email_text: str) -> dict:
@@ -19,7 +19,15 @@ def classify_email(email_text: str) -> dict:
     Email: {email_text}
     """
     response = llm.invoke(prompt)
-    return eval(response)
+    if isinstance(response, dict):
+        return response
+    if isinstance(response, str):
+        try:
+            return ast.literal_eval(response)
+        except Exception:
+            return {"error": "Failed to parse response"}
+    return {"error": "Unexpected response type"}
+
 
 def node_classify(state):
     result = classify_email.invoke(state['body'])
