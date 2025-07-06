@@ -1,10 +1,13 @@
 from memory import store_task
 
 def act_on_email(data):
-    intent = data['intent']
-    sender = data['sender']
-    body = data['body']
-    
+    intent = data.get('intent')
+    sender = data.get('sender', '')
+    body = data.get('body', '')
+
+    if not intent:
+        return {"status": "error", "error": "No intent detected."}
+
     if intent == "task":
         task = "Review document and send feedback"
         deadline = "Friday"  # You could dynamically extract using Gemini
