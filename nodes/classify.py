@@ -45,7 +45,7 @@ def classify_email(email_text: str) -> dict:
 
 def node_classify(state):
     print("Classify node input:", state)
-    result = classify_email.invoke(state['body'])
+    result = classify_email(state['body'])
     print("Classify node result:", result)
     status = f"{result.get('intent', 'Unknown')} | Action Required: {result.get('action_required', 'Unknown')}"
     return {**state, **result, "status": status}
