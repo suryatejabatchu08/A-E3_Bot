@@ -26,12 +26,22 @@ def get_recent_emails(service, max_results=5):
         headers = payload['headers']
         subject = next((h['value'] for h in headers if h['name'] == 'Subject'), '')
         sender = next((h['value'] for h in headers if h['name'] == 'From'), '')
-        parts = payload.get('parts', [])
         body = ''
 
-        if parts:
-            body = base64.urlsafe_b64decode(parts[0]['body']['data']).decode()
+        def extract_body(payload):
+            if 'parts' in payload:
+                for part in payload['parts']:
+                    if part['mimeType'] == 'text/plain' and 'data' in part['body']:
+                        return base64.urlsafe_b64decode(part['body']['data']).decode()
+                    elif 'parts' in part:
+                        result = extract_body(part)
+                        if result:
+                            return result
+            elif 'body' in payload and 'data' in payload['body']:
+                return base64.urlsafe_b64decode(payload['body']['data']).decode()
+            return ''
 
+        body = extract_body(payload)
         emails.append({'sender': sender, 'subject': subject, 'body': body})
 
     return emails

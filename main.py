@@ -12,6 +12,8 @@ load_dotenv()
 init_memory()
 
 class EmailState(TypedDict):
+    sender: str
+    subject: str
     body: str
 
 # Build LangGraph flow

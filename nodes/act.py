@@ -4,21 +4,32 @@ def act_on_email(data):
     intent = data.get('intent')
     sender = data.get('sender', '')
     body = data.get('body', '')
+    summary = data.get('summary', '')
+    action_required = data.get('action_required', False)
 
     if not intent:
         return {"status": "error", "error": "No intent detected."}
 
-    if intent == "task":
-        task = "Review document and send feedback"
-        deadline = "Friday"  # You could dynamically extract using Gemini
+    if action_required:
+        # Dynamically generate task and deadline based on summary/intent
+        task = summary if summary else "Follow up on email"
+        # Example: extract a deadline from summary or fallback
+        deadline = "Friday" if "Friday" in body else "this week"
         store_task(sender, task, deadline)
+        reply = f"Hi, I’ll take action: {task}. Expected by {deadline}."
+        reminder = f"{deadline} 5PM"
+        status = f"Action taken for intent '{intent}': {task}"
         return {
-            "reply": f"Hi, I’ll review the document and get back to you by {deadline}.",
-            "reminder": "Thursday 5PM",
-            "status": "task_saved"
+            "reply": reply,
+            "reminder": reminder,
+            "status": status
         }
     else:
-        return {"status": "no_action"}
+        status = f"No action required for intent '{intent}'"
+        return {"status": status}
 
 def node_act(state):
-    return {**state, **act_on_email(state)}
+    print("Act node input:", state)
+    result = act_on_email(state)
+    print("Act node result:", result)
+    return {**state, **result}

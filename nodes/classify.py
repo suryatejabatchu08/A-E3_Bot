@@ -4,6 +4,10 @@ import os
 import ast
 llm = ChatGoogleGenerativeAI(api_key=os.getenv("GEMINI_API_KEY"), model="gemini-2.0-flash")
 
+import ast
+import json
+import re
+
 @tool
 def classify_email(email_text: str) -> dict:
     """
@@ -19,16 +23,29 @@ def classify_email(email_text: str) -> dict:
     Email: {email_text}
     """
     response = llm.invoke(prompt)
-    if isinstance(response, dict):
-        return response
-    if isinstance(response, str):
+    print(f"LLM Response: {response}")
+
+    # Extract content if response has 'content' attribute
+    if hasattr(response, "content"):
+        content = response.content
+    else:
+        content = response
+
+    # Remove code block markers if present
+    content = re.sub(r"^```json|^```|```$", "", content, flags=re.MULTILINE).strip()
+
+    # Try to parse as JSON
+    try:
+        return json.loads(content)
+    except Exception:
         try:
-            return ast.literal_eval(response)
+            return ast.literal_eval(content)
         except Exception:
             return {"error": "Failed to parse response"}
-    return {"error": "Unexpected response type"}
-
 
 def node_classify(state):
+    print("Classify node input:", state)
     result = classify_email.invoke(state['body'])
-    return {**state, **result}
+    print("Classify node result:", result)
+    status = f"{result.get('intent', 'Unknown')} | Action Required: {result.get('action_required', 'Unknown')}"
+    return {**state, **result, "status": status}
